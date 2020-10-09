@@ -288,7 +288,7 @@ else
 fi
 
 if [ "$jdk_type" == "zulu" ]; then
-  curl -sSL 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0xB1998361219BD9C9' | sudo apt-key add -
+  wget -q -O - 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0xB1998361219BD9C9' | sudo apt-key add -
   sudo add-apt-repository "deb http://repos.azul.com/azure-only/zulu/apt stable main" --yes
 else
   sudo add-apt-repository ppa:openjdk-r/ppa --yes
