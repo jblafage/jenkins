@@ -27,6 +27,9 @@ Arguments
   --storage_endpoint|-se              : The storage blob endpoint for artifact manager.
   --artifact_container|-ac            : The container name for artifact manger.
   --artifact_prefix|-ap               : The prefix value for artifact manager.
+  --proxy_host|ph                     : The proxy host.
+  --proxy_port||pp                    : The proxy port.
+  --no_proxy|np                       : Domains exclusion for the proxy.
 EOF
 }
 
@@ -163,6 +166,18 @@ do
       artifact_prefix="$1"
       shift
       ;;
+    --proxy_host|-ph)
+      proxy_host="$1"
+      shift
+      ;;
+    --proxy_port|-pp)
+      proxy_port="$1"
+      shift
+      ;;
+    --no_proxy|-np)
+      no_proxy="$1"
+      shift
+      ;;  
     --help|-help|-h)
       print_usage
       exit 13
@@ -278,6 +293,19 @@ server {
 EOF
 )
 
+jenkins_proxy=$(cat <<EOF
+<?xml version='1.1' encoding='UTF-8'?>
+<proxy>
+  <name>${proxy_host}</name>
+  <port>${proxy_port}</port>
+  <userName></userName>
+  <noProxyHost>${no_proxy}</noProxyHost>
+  <secretPassword></secretPassword>
+  <testUrl></testUrl>
+</proxy>
+EOF
+)
+
 #update apt repositories
 wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
 
@@ -325,6 +353,12 @@ else
   sudo apt-get install jenkins --yes
   sudo apt-get install jenkins --yes # sometime the first apt-get install jenkins command fails, so we try it twice
 fi
+
+# Configure the proxy for Jenkins
+echo "${jenkins_proxy}" | sudo tee /var/lib/jenkins/proxy.xml > /dev/null
+
+#restart jenkins
+sudo service jenkins restart
 
 # wait until Jenkins is started and running
 retry_until_successful sudo test -f /var/lib/jenkins/secrets/initialAdminPassword
